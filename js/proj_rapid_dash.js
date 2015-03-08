@@ -48,7 +48,11 @@ d3.json("data/tickets.json", function (data) {
 
 });
 
-// This is called when user is looking for a ticket in the search box
-// $#("tk-search").submit(function(e) {
-//  window.open("http://ithelpdesk.ema.esselte.net/rt/Ticket/Display.html?id="+$#("tk-num").text,"_blank");
-// });
+// Process ticket search
+$("#tk-search").submit(function(e) {
+  var t = $("#tk-num").val();
+  if( t == parseInt(t) && t > 0 ) {
+    window.open("http://ithelpdesk.ema.esselte.net/rt/Ticket/Display.html?id="+t,"_blank");
+  }
+  e.preventDefault();
+});
