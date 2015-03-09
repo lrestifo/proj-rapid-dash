@@ -37,11 +37,11 @@ $(document).ready(function() {
 
 // Map a status letter to its corresponding colored icon
 function bcSymbol( c ) {
-  switch( c ) {
-    case "N": return( "<span class='label label-warning glyphicon glyphicon-time' aria-hidden='true'> </span>" );
-    case "O": return( "<span class='label label-info glyphicon glyphicon-play' aria-hidden='true'>O</span>" );
-    case "E": return( "<span class='label label-danger glyphicon glyphicon-remove' aria-hidden='true'>E</span>" );
-    case "R": return( "<span class='label label-success glyphicon glyphicon-ok' aria-hidden='true'>&nbsp;</span>" );
+  switch( c.toUpperCase() ) {
+    case "N": return( "<span class='label label-warning glyphicon glyphicon-pause'> N </span>" );
+    case "O": return( "<span class='label label-info glyphicon glyphicon-play'> O </span>" );
+    case "E": return( "<span class='label label-danger glyphicon glyphicon-remove'> E </span>" );
+    case "R": return( "<span class='label label-success glyphicon glyphicon-ok'>&nbsp;&nbsp;</span>" );
     default: return( "&nbsp;" );
   }
 }
@@ -52,8 +52,10 @@ d3.json("./data/tickets.json", function (data) {
   // Run the data through crossfilter and load facts and dimensions
   var facts = crossfilter(data);
   var bcDim = facts.dimension(function (d) { return d.id; });
+  var hsDim = facts.dimension(function (d) { return d.site; });
 
   // Setup the charts
+  var nFmt = d3.format("4d");
 
   // Table of Business Cases
   dataTable.width(960).height(800)
@@ -65,7 +67,7 @@ d3.json("./data/tickets.json", function (data) {
       function(d) { return d.site; },
       function(d) { return( d.subject.substring(0,5) == "Integ" ? d.subject.substr(19) : d.subject ); },
       function(d) { return d.status; },
-      function(d) { return d.issues; },
+      function(d) { return nFmt( d.issues ); },
       function(d) { return bcSymbol( d.progress.charAt(0) ); },
       function(d) { return bcSymbol( d.progress.charAt(1) ); },
       function(d) { return bcSymbol( d.progress.charAt(2) ); },
