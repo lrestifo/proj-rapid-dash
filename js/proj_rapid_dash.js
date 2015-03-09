@@ -21,21 +21,32 @@ $(document).ready(function() {
     corners: 1,       // Corner roundness (0..1)
     rotate: 0,        // The rotation offset
     direction: 1,     // 1: clockwise, -1: counterclockwise
-    color: '#000',    // #rgb or #rrggbb or array of colors
+    color: "#000",    // #rgb or #rrggbb or array of colors
     speed: 1,         // Rounds per second
     trail: 60,        // Afterglow percentage
     shadow: false,    // Whether to render a shadow
     hwaccel: true,    // Whether to use hardware acceleration
-    className: 'spinner', // The CSS class to assign to the spinner
+    className: "spinner", // The CSS class to assign to the spinner
     zIndex: 2e9,      // The z-index (defaults to 2000000000)
-    top: '50%',       // Top position relative to parent
-    left: '50%'       // Left position relative to parent
+    top: "50%",       // Top position relative to parent
+    left: "50%"       // Left position relative to parent
   };
-  spinner_div = $('#spinner').get(0);
+  spinner_div = $("#spinner").get(0);
   spinner = new Spinner(opts).spin(spinner_div);
 });
 
-// load data from the server
+// Map a status letter to its corresponding colored icon
+function bcSymbol( c ) {
+  switch( c ) {
+    case "N": return( "<span class='label label-warning glyphicon glyphicon-time' aria-hidden='true'> </span>" );
+    case "O": return( "<span class='label label-info glyphicon glyphicon-play' aria-hidden='true'>O</span>" );
+    case "E": return( "<span class='label label-danger glyphicon glyphicon-remove' aria-hidden='true'>E</span>" );
+    case "R": return( "<span class='label label-success glyphicon glyphicon-ok' aria-hidden='true'>&nbsp;</span>" );
+    default: return( "&nbsp;" );
+  }
+}
+
+// Load data from the server
 d3.json("./data/tickets.json", function (data) {
 
   // Run the data through crossfilter and load facts and dimensions
@@ -55,27 +66,23 @@ d3.json("./data/tickets.json", function (data) {
       function(d) { return( d.subject.substring(0,5) == "Integ" ? d.subject.substr(19) : d.subject ); },
       function(d) { return d.status; },
       function(d) { return d.issues; },
-      function(d) { return d.progress.charAt(0); },
-      function(d) { return d.progress.charAt(1); },
-      function(d) { return d.progress.charAt(2); },
-      function(d) { return d.progress.charAt(3); },
-      function(d) { return d.progress.charAt(4); },
-      function(d) { return d.progress.charAt(5); },
-      function(d) { return d.progress.charAt(6); },
-      function(d) { return d.progress.charAt(7); },
-      function(d) { return d.progress.charAt(8); },
-      function(d) { return d.progress.charAt(9); },
-      function(d) { return d.progress.charAt(10); }
+      function(d) { return bcSymbol( d.progress.charAt(0) ); },
+      function(d) { return bcSymbol( d.progress.charAt(1) ); },
+      function(d) { return bcSymbol( d.progress.charAt(2) ); },
+      function(d) { return bcSymbol( d.progress.charAt(3) ); },
+      function(d) { return bcSymbol( d.progress.charAt(4) ); },
+      function(d) { return bcSymbol( d.progress.charAt(5) ); },
+      function(d) { return bcSymbol( d.progress.charAt(6) ); },
+      function(d) { return bcSymbol( d.progress.charAt(7) ); },
+      function(d) { return bcSymbol( d.progress.charAt(8) ); },
+      function(d) { return bcSymbol( d.progress.charAt(9) ); },
+      function(d) { return bcSymbol( d.progress.charAt(10) ); }
     ])
     .sortBy(function(d){ return d.id; })
     .order(d3.ascending);
 
   // Render the charts
   dc.renderAll();
-
-  for( var i = 0; i < 1000000; i++ ) {
-    for( var j = 0; j < 1000; j++ ) {}
-  }
 
   // End the spinner
   if( spinner != null ) {
