@@ -9,7 +9,7 @@
 var dataTable = dc.dataTable("#bc-table");
 
 // load data from the server
-d3.json("data/tickets.json", function (data) {
+d3.json("./data/tickets.json", function (data) {
 
   // Run the data through crossfilter and load facts and dimensions
   var facts = crossfilter(data);
@@ -21,11 +21,11 @@ d3.json("data/tickets.json", function (data) {
   dataTable.width(960).height(800)
     .dimension(bcDim)
     .group(function(d) { return "Business Cases"; })
-    .size(100)
+    .size(200)
     .columns([
       function(d) { return d.id; },
       function(d) { return d.site; },
-      function(d) { return ( d.subject.startsWith("Integration") ? d.subject.substring(d.subject.indexOf("-")+1) : d.subject ); },
+      function(d) { return( d.subject.substring(0,5) == "Integ" ? d.subject.substr(19) : d.subject ); },
       function(d) { return d.status; },
       function(d) { return d.issues; },
       function(d) { return d.progress.charAt(0); },
