@@ -5,8 +5,13 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-// Create chart objects & link them to the page
+// Create chart objects & link them to the page, initialize page globals
 var dataTable = dc.dataTable("#bc-table");
+var testsPie = dc.pieChart("#bc-test-chart");
+var filterLocn = 0;
+var factsLoaded = false;
+var facts;
+var siteDim;
 
 // Create the spinning wheel while waiting for data load
 // See http://fgnass.github.io/spin.js/
@@ -33,6 +38,8 @@ $(document).ready(function() {
   };
   spinner_div = $("#spinner").get(0);
   spinner = new Spinner(opts).spin(spinner_div);
+  // Reset location filter
+  setLocationFilter( 0 );
 });
 
 // Map a status letter to its corresponding colored icon
@@ -46,26 +53,50 @@ function bcSymbol( c ) {
   }
 }
 
+// Map ticket status to test status name
+function testStatus( s ) {
+  switch( s.toLowerCase() ) {
+    case "new":       return( "Not started" );
+    case "open":      return( "In progress" );
+    case "stalled":   return( "In error" );
+    case "resolved":  return( "Completed" );
+    default:          return( "Unknown" );
+  }
+}
+
+// Anchor the ticket subject
+function ticketA( id, subj ) {
+  return( "<a href='http://ithelpdesk.ema.esselte.net/rt/Ticket/Display.html?id=" + id + "'>" + subj + "</a>" );
+}
+
 // Load data from the server
 d3.json("./data/tickets.json", function (data) {
 
   // Run the data through crossfilter and load facts and dimensions
-  var facts = crossfilter(data);
+  facts = crossfilter(data);
+  siteDim = facts.dimension(function (d) { return d.site; });
   var bcDim = facts.dimension(function (d) { return d.id; });
-  var hsDim = facts.dimension(function (d) { return d.site; });
+  var statusDim = facts.dimension(function (d) { return testStatus(d.status); });
+  var statusGroup = statusDim.group();
 
-  // Setup the charts
-  var nFmt = d3.format("4d");
+  // Business cases status pie chart
+  testsPie.width(200).height(200)
+    .radius(100)
+    .innerRadius(30)
+    .dimension(statusDim)
+    .group(statusGroup)
+    .title(function(d) { return d.value; });
 
   // Table of Business Cases
+  var nFmt = d3.format("4d");
   dataTable.width(960).height(800)
     .dimension(bcDim)
-    .group(function(d) { return "Business Cases"; })
+    .group(function(d) { return ( filterLocn == 0 ? "All Business Cases" : ( filterLocn == 1 ? "Business Cases Hestra" : "Business Cases St.Amé" ) ); })
     .size(200)
     .columns([
-      function(d) { return d.id; },
+      function(d) { return ticketA(d.id, d.id); },
       function(d) { return d.site; },
-      function(d) { return( d.subject.substring(0,5) == "Integ" ? d.subject.substr(19) : d.subject ); },
+      function(d) { return( d.subject.substring(0,5) == "Integ" ? ticketA(d.id, d.subject.substr(19)) : ticketA(d.id, d.subject) ); },
       function(d) { return d.status; },
       function(d) { return nFmt( d.issues ); },
       function(d) { return bcSymbol( d.progress.charAt(0) ); },
@@ -85,6 +116,7 @@ d3.json("./data/tickets.json", function (data) {
 
   // Render the charts
   dc.renderAll();
+  factsLoaded = true;
 
   // End the spinner
   if( spinner != null ) {
@@ -101,3 +133,30 @@ $("#tk-search").submit(function(e) {
   }
   e.preventDefault();
 });
+
+// Set location filter
+$("#filterSE").click(function(e) { setLocationFilter(1); });
+$("#filterFR").click(function(e) { setLocationFilter(2); });
+$("#filterXX").click(function(e) { setLocationFilter(0); });
+function setLocationFilter( l ) {
+  if( !factsLoaded ) { return; }
+  dc.filterAll();
+  switch( l ) {
+    case 1:
+      siteDim.filter("H");
+      filterLocn = 1;
+      $(".currentLocn").text("Hestra");
+      break;
+    case 2:
+      siteDim.filter("S");
+      filterLocn = 2;
+      $(".currentLocn").text("St.Amé");
+      break;
+    default:
+      siteDim.filterAll();
+      filterLocn = 0;
+      $(".currentLocn").text("Hestra + St.Amé");
+      break;
+  }
+  dc.redrawAll();
+}
