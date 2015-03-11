@@ -15,8 +15,8 @@ var siteDim;
 
 // Create the spinning wheel while waiting for data load
 // See http://fgnass.github.io/spin.js/
-var spinner = null;
-var spinner_div = 0;
+var spinner = [ null, null ];
+var spinDiv = [ 0, 0 ];
 $(document).ready(function() {
   var opts = {
     lines: 13,        // The number of lines to draw
@@ -36,8 +36,11 @@ $(document).ready(function() {
     top: "50%",       // Top position relative to parent
     left: "50%"       // Left position relative to parent
   };
-  spinner_div = $("#spinner").get(0);
-  spinner = new Spinner(opts).spin(spinner_div);
+  spinDiv[0] = $("#spinner").get(0);
+  spinDiv[1] = $("#bc-test-div").get(0);
+  for( var i = 0; i < spinDiv.length; i++ ) {
+    spinner[i] = new Spinner(opts).spin(spinDiv[i]);
+  }
   // Reset location filter
   setLocationFilter( 0 );
 });
@@ -85,7 +88,7 @@ d3.json("./data/tickets.json", function (data) {
     .radius(100)
     .innerRadius(70)
     .ordinalColors(["#8a56e2","#cf56e2","#e256ae","#e25668","#e28956","#e2cf56","#aee256","#68e256","#56e289","#56e2cf","#56aee2","#5668e2"])
-    .legend(dc.legend().x(50).y(50).itemHeight(13).gap(4))
+    .legend(dc.legend().x(50).y(40).itemHeight(12).gap(3))
     .renderLabel(false)
     .dimension(statusDim)
     .group(statusGroup)
@@ -122,9 +125,11 @@ d3.json("./data/tickets.json", function (data) {
   dc.renderAll();
   factsLoaded = true;
 
-  // End the spinner
-  if( spinner != null ) {
-    spinner.stop(spinner_div);
+  // End the spinner(s)
+  for( var i = 0; i < spinDiv.length; i++ ) {
+    if( spinner[i] != null ) {
+      spinner[i].stop(spinDiv[i]);
+    }
   }
 
 });
