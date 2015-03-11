@@ -128,3 +128,12 @@ body {
   width: 200px;
   height: 200px;
 }
+
+/*
+ * Table
+ */
+.dc-table-group {
+  background-color: #337ab7 !important;
+  color: #fff;
+}
+

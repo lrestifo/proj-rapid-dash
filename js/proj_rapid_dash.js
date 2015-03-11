@@ -70,22 +70,26 @@ function ticketA( id, subj ) {
 }
 
 // Load data from the server
+// d3.json("../cgi-bin/rapid/tickets.pl", function (data) {
 d3.json("./data/tickets.json", function (data) {
 
   // Run the data through crossfilter and load facts and dimensions
   facts = crossfilter(data);
   siteDim = facts.dimension(function (d) { return d.site; });
   var bcDim = facts.dimension(function (d) { return d.id; });
-  var statusDim = facts.dimension(function (d) { return testStatus(d.status); });
+  var statusDim = facts.dimension(function (d) { return d.completion; });
   var statusGroup = statusDim.group();
 
   // Business cases status pie chart
   testsPie.width(200).height(200)
     .radius(100)
-    .innerRadius(30)
+    .innerRadius(70)
+    .ordinalColors(["#8a56e2","#cf56e2","#e256ae","#e25668","#e28956","#e2cf56","#aee256","#68e256","#56e289","#56e2cf","#56aee2","#5668e2"])
+    .legend(dc.legend().x(50).y(50).itemHeight(13).gap(4))
+    .renderLabel(false)
     .dimension(statusDim)
     .group(statusGroup)
-    .title(function(d) { return d.value; });
+    .title(function(d) { return d.value + " business cases"; });
 
   // Table of Business Cases
   var nFmt = d3.format("4d");
@@ -97,7 +101,7 @@ d3.json("./data/tickets.json", function (data) {
       function(d) { return ticketA(d.id, d.id); },
       function(d) { return d.site; },
       function(d) { return( d.subject.substring(0,5) == "Integ" ? ticketA(d.id, d.subject.substr(19)) : ticketA(d.id, d.subject) ); },
-      function(d) { return d.status; },
+      function(d) { return d.completion; },
       function(d) { return nFmt( d.issues ); },
       function(d) { return bcSymbol( d.progress.charAt(0) ); },
       function(d) { return bcSymbol( d.progress.charAt(1) ); },

@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/perl -w
 ################################################################################
 #
 # Title:    TICKETS -- Query RT and return JSON
@@ -47,6 +47,7 @@ sub defSite {
 
 # Read configuration data
 #-------------------------
+# my $conf = LoadFile("config.yaml");
 my $conf = LoadFile("./server/config.yaml");
 
 # Connect and login to RT
@@ -88,6 +89,7 @@ try {
     print '"subject":"', fixQuotes($t->{Subject}), '",';
     print '"status":"', $t->{Status}, '",';
     print '"progress":"', fixQuotes($t->{"CF.{QS Status}"}), '",';
+    print '"completion":"', $t->{"CF.{QS Completion}"}, '",';
     print '"issues":', $children, '}';
     print ',' unless ( --$tickets < 1 );
   }
