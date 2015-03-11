@@ -61,3 +61,7 @@ nytprof.out
 # Configuration data # !important
 #################################
 server/config.yaml
+
+# Temps from Browser-Sync #
+###########################
+*.swp
