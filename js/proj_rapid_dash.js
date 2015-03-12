@@ -8,7 +8,7 @@
 // Create chart objects & link them to the page, initialize page globals
 var dataTable = dc.dataTable("#bc-table","bc");
 var testsPie = dc.pieChart("#bc-test-chart","bc");
-// var statusRow = dc.rowChart("#issue-stat-chart","ii");
+var statusRow = dc.rowChart("#issue-stat-chart","ii");
 var ownerPie = dc.pieChart("#issue-own-chart","ii");
 // var impactBub = dc.bubbleChart("#issue-impact-chart","ii");
 // var issueTable = dc.dataTable("#issue-table");
@@ -43,6 +43,9 @@ $(document).ready(function() {
   };
   spinDiv[0] = $("#spinner").get(0);
   spinDiv[1] = $("#bc-test-div").get(0);
+  spinDiv[2] = $("#issue-stat-div").get(0);
+  spinDiv[3] = $("#issue-own-div").get(0);
+  spinDiv[4] = $("#issue-impact-div").get(0);
   for( var i = 0; i < spinDiv.length; i++ ) {
     spinner[i] = new Spinner(opts).spin(spinDiv[i]);
   }
@@ -77,6 +80,11 @@ function ticketA( id, subj ) {
   return( "<a href='http://ithelpdesk.ema.esselte.net/rt/Ticket/Display.html?id=" + id + "'>" + subj + "</a>" );
 }
 
+// Turn a string plural if necessary
+function toPlural( s, n ) {
+  return( n == 1 ? s : s+"s" );
+}
+
 // Load data from the server
 // d3.json("../cgi-bin/rapid/tickets.pl", function (data) {
 d3.json("./data/tickets.json", function (data) {
@@ -98,7 +106,7 @@ d3.json("./data/tickets.json", function (data) {
     .renderLabel(false)
     .dimension(statusDim)
     .group(statusGroup)
-    .title(function(d) { return d.value + " business cases"; });
+    .title(function(d) { return d.value + toPlural(" business case",d.value) + " " + d.key; });
 
   // Table of Business Cases
   var nFmt = d3.format("4d");
@@ -147,22 +155,37 @@ d3.json("./data/issues.json", function (data) {
   // Run the data through crossfilter and load facts and dimensions
   issueFacts = crossfilter(data);
   var issueDim = issueFacts.dimension(function (d) { return d.id; });
-  // var issueStatusDim = issueFacts.dimension(function (d) { return d.status; });
-  // var issueStatusGroup = issueStatusDim.group();
+  var issueStatusDim = issueFacts.dimension(function (d) { return d.status; });
+  var issueStatusGroup = issueStatusDim.group();
   var issueOwnerDim = issueFacts.dimension(function (d) { return d.owner; });
   var issueOwnerGroup = issueOwnerDim.group();
 
+  // Issue status row chart
+  statusRow.width(200).height(200)
+    .margins({top:5, left:10, right:10, bottom:20})
+    .dimension(issueStatusDim)
+    .group(issueStatusGroup)
+    .colors(d3.scale.category10())
+    .label(function (d) { return d.key; })
+    .title(function (d) { return d.value + " " + d.key + toPlural(" issue",d.key); })
+    .elasticX(true)
+    .xAxis().ticks(4);
+
   // Issue owners pie chart
+  issueStatusDim.filter(function (d) { return d != "resolved"; });
   ownerPie.width(200).height(200)
-    .radius(40)
-    .innerRadius(30)
-    //.ordinalColors(["#e2cf56","#e28956","#68e256","#cf56e2","#8a56e2"])
+    .radius(100)
     .ordinalColors(["#8a56e2","#cf56e2","#e256ae","#e25668","#e28956","#e2cf56","#aee256","#68e256","#56e289","#56e2cf","#56aee2","#5668e2"])
-    .legend(dc.legend().x(0).y(0).itemHeight(12).gap(3))
-    .renderLabel(false)
     .dimension(issueOwnerDim)
     .group(issueOwnerGroup)
-    .title(function(d) { return d.value + " issues"; });
+    .label(function (d) { return d.key; })
+    .title(function (d) { return d.key + ": " + d.value + toPlural(" issue", d.value); });
+
+  // Issue impact bubble chart
+  // impactBub.width(200).height(200)
+    // .transitionDuration(1500)
+    // .margins({top:5, left:10, right:10, bottom:20})
+    // .dimension()
 
   // Table of Issues
   // var nFmt = d3.format("4d");
@@ -185,13 +208,6 @@ d3.json("./data/issues.json", function (data) {
 
   // Render the charts
   dc.renderAll("ii");
-
-  // End the spinner(s)
-  // for( var i = 0; i < spinDiv.length; i++ ) {
-    // if( spinner[i] != null ) {
-      // spinner[i].stop(spinDiv[i]);
-    // }
-  // }
 
 });
 
