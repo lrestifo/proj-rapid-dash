@@ -6,12 +6,17 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 // Create chart objects & link them to the page, initialize page globals
-var dataTable = dc.dataTable("#bc-table");
-var testsPie = dc.pieChart("#bc-test-chart");
+var dataTable = dc.dataTable("#bc-table","bc");
+var testsPie = dc.pieChart("#bc-test-chart","bc");
+// var statusRow = dc.rowChart("#issue-stat-chart","ii");
+var ownerPie = dc.pieChart("#issue-own-chart","ii");
+// var impactBub = dc.bubbleChart("#issue-impact-chart","ii");
+// var issueTable = dc.dataTable("#issue-table");
 var filterLocn = 0;
 var factsLoaded = false;
 var facts;
 var siteDim;
+var issueFacts;
 
 // Create the spinning wheel while waiting for data load
 // See http://fgnass.github.io/spin.js/
@@ -87,7 +92,8 @@ d3.json("./data/tickets.json", function (data) {
   testsPie.width(200).height(200)
     .radius(100)
     .innerRadius(70)
-    .ordinalColors(["#8a56e2","#cf56e2","#e256ae","#e25668","#e28956","#e2cf56","#aee256","#68e256","#56e289","#56e2cf","#56aee2","#5668e2"])
+    //.ordinalColors(["#8a56e2","#cf56e2","#e256ae","#e25668","#e28956","#e2cf56","#aee256","#68e256","#56e289","#56e2cf","#56aee2","#5668e2"])
+    .ordinalColors(["#5668e2","#56aee2","#56e2cf","#56e289","#68e256","#aee256","#e2cf56","#e28956","#e25668","#e256ae","#cf56e2","#8a56e2"])
     .legend(dc.legend().x(50).y(40).itemHeight(12).gap(3))
     .renderLabel(false)
     .dimension(statusDim)
@@ -122,7 +128,7 @@ d3.json("./data/tickets.json", function (data) {
     .order(d3.ascending);
 
   // Render the charts
-  dc.renderAll();
+  dc.renderAll("bc");
   factsLoaded = true;
 
   // End the spinner(s)
@@ -131,6 +137,61 @@ d3.json("./data/tickets.json", function (data) {
       spinner[i].stop(spinDiv[i]);
     }
   }
+
+});
+
+// Load issue data from the server
+// d3.json("../cgi-bin/rapid/issues.pl", function (data) {
+d3.json("./data/issues.json", function (data) {
+
+  // Run the data through crossfilter and load facts and dimensions
+  issueFacts = crossfilter(data);
+  var issueDim = issueFacts.dimension(function (d) { return d.id; });
+  // var issueStatusDim = issueFacts.dimension(function (d) { return d.status; });
+  // var issueStatusGroup = issueStatusDim.group();
+  var issueOwnerDim = issueFacts.dimension(function (d) { return d.owner; });
+  var issueOwnerGroup = issueOwnerDim.group();
+
+  // Issue owners pie chart
+  ownerPie.width(200).height(200)
+    .radius(40)
+    .innerRadius(30)
+    //.ordinalColors(["#e2cf56","#e28956","#68e256","#cf56e2","#8a56e2"])
+    .ordinalColors(["#8a56e2","#cf56e2","#e256ae","#e25668","#e28956","#e2cf56","#aee256","#68e256","#56e289","#56e2cf","#56aee2","#5668e2"])
+    .legend(dc.legend().x(0).y(0).itemHeight(12).gap(3))
+    .renderLabel(false)
+    .dimension(issueOwnerDim)
+    .group(issueOwnerGroup)
+    .title(function(d) { return d.value + " issues"; });
+
+  // Table of Issues
+  // var nFmt = d3.format("4d");
+  // issueTable.width(240).height(120)
+    // .dimension(issueDim)
+    // .group(function(d) { return ( filterLocn == 0 ? "All Issues" : ( filterLocn == 1 ? "Issues Hestra" : "Issues St.Amé" ) ); })
+    // .size(200)
+    // .columns([
+      // function(d) { return ticketA(d.id, d.id); },
+      // function(d) { return d.site; },
+      // function(d) { return ticketA(d.id, d.subject); },
+      // function(d) { return d.owner; },
+      // function(d) { return d.frequency; },
+      // function(d) { return d.impact; },
+      // function(d) { return d.status; },
+      // function(d) { return d.bc; }
+    // ])
+    // .sortBy(function(d){ return d.id; })
+    // .order(d3.ascending);
+
+  // Render the charts
+  dc.renderAll("ii");
+
+  // End the spinner(s)
+  // for( var i = 0; i < spinDiv.length; i++ ) {
+    // if( spinner[i] != null ) {
+      // spinner[i].stop(spinDiv[i]);
+    // }
+  // }
 
 });
 
@@ -149,7 +210,7 @@ $("#filterFR").click(function(e) { setLocationFilter(2); });
 $("#filterXX").click(function(e) { setLocationFilter(0); });
 function setLocationFilter( l ) {
   if( !factsLoaded ) { return; }
-  dc.filterAll();
+  dc.filterAll("bc");
   switch( l ) {
     case 1:
       siteDim.filter("H");
@@ -162,10 +223,10 @@ function setLocationFilter( l ) {
       $(".currentLocn").text("St.Amé");
       break;
     default:
-      siteDim.filterAll();
+      siteDim.filterAll("bc");
       filterLocn = 0;
       $(".currentLocn").text("Hestra + St.Amé");
       break;
   }
-  dc.redrawAll();
+  dc.redrawAll("bc");
 }
