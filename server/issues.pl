@@ -87,10 +87,9 @@ try {
       print '"subject":"', fixQuotes($tk->{Subject}), '",';
       print '"status":"', $tk->{Status}, '",';
       print '"owner":"', $tk->{Owner}, '",';
-      print '"bc":', $id, ',';     # $tk->{Parents}, ',';
+      print '"bc":', $id, ',';
       print '"frequency":"', $bcFreq[$id], '",';
       print '"impact":"', $bcImp[$id], '"}';
-      # print ',' unless ( --$tickets < 1 );
       $issues++;
     }
   }
