@@ -106,6 +106,8 @@ body {
 .placeholder .proj-chart {
   display: inline-block;
   border-radius: 50%;
+  min-width: 200px;
+  min-height: 200px;
 }
 
 

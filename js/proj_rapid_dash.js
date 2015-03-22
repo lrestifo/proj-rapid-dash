@@ -181,11 +181,61 @@ d3.json("./data/issues.json", function (data) {
     .label(function (d) { return d.key; })
     .title(function (d) { return d.key + ": " + d.value + toPlural(" issue", d.value); });
 
+  // Issue grouping by Frequency / Impact (for the bubble chart)
+  var issueFreqImpactGroup = issueStatusDim.group().reduce(
+    function(p, v) {    // Add callback
+      p.count++;
+      if( v.frequency === 'H' ) { p.freqH++; }
+      if( v.frequency === 'M' ) { p.freqM++; }
+      if( v.frequency === 'L' ) { p.freqL++; }
+      if( v.impact === 'H' ) { p.impH++; }
+      if( v.impact === 'M' ) { p.impM++; }
+      if( v.impact === 'L' ) { p.impL++; }
+    },
+    function(p, v) {    // Remove calback
+      p.count--;
+      if( v.frequency === 'H' ) { p.freqH--; }
+      if( v.frequency === 'M' ) { p.freqM--; }
+      if( v.frequency === 'L' ) { p.freqL--; }
+      if( v.impact === 'H' ) { p.impH--; }
+      if( v.impact === 'M' ) { p.impM--; }
+      if( v.impact === 'L' ) { p.impL--; }
+    },
+    function(p, v) {    // Initialize callback
+      return { count:0, freqH:0, freqM:0, freqL:0, impH:0, impM:0, impL:0 };
+    }
+  );
+
   // Issue impact bubble chart
-  // impactBub.width(200).height(200)
-    // .transitionDuration(1500)
-    // .margins({top:5, left:10, right:10, bottom:20})
-    // .dimension()
+/*
+  impactBub.width(200).height(200)
+    .margins({top:5, left:20, right:10, bottom:20})
+    .dimension(issueStatusDim)
+    .group(issueFreqImpactGroup)
+    .colors()
+    .colorDomain()
+    .colorAccessor(function (d) { } )
+    .keyAccessor(function (d) { } )
+    .valueAccessor(function (d) { } )
+    .radiusValueAccessor(function (d) { } )
+    .maxBubbleRelativeSize(0.3)
+    .x(d3.scale.linear().domain([0,100]))
+    .y(d3.scale.linear().domain([0,100]))
+    .r(d3.scale.linear().domain([0,100]))
+    .elasticX(true)
+    .elasticY(true)
+    .yAxisPadding(100)
+    .xAxisPadding(100)
+    .renderHorizontalGridLines(true)
+    .renderVerticalGridLines(true)
+    .xAxisLabel("Frequency")
+    .yAxisLabel("Impact")
+    .renderLabel(true)
+    .label(function (d) { return d.key; })
+    .renderTitle(true)
+    .title(function (d) { return d.value; })
+  );
+*/
 
   // Table of Issues
   // var nFmt = d3.format("4d");
