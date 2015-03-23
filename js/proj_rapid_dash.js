@@ -4,24 +4,29 @@
 // Place at the very bottom of the page after all libraries and scripts
 //
 ///////////////////////////////////////////////////////////////////////////////
+"use strict";
 
 // Create chart objects & link them to the page, initialize page globals
 var dataTable = dc.dataTable("#bc-table","bc");
 var testsPie = dc.pieChart("#bc-test-chart","bc");
 var statusRow = dc.rowChart("#issue-stat-chart","ii");
 var ownerPie = dc.pieChart("#issue-own-chart","ii");
-// var impactBub = dc.bubbleChart("#issue-impact-chart","ii");
+var impactBub = dc.bubbleChart("#issue-impact-chart","ii");
 // var issueTable = dc.dataTable("#issue-table");
-var filterLocn = 0;
-var factsLoaded = false;
-var facts;
-var siteDim;
-var issueFacts;
+
+// Hold crossfilter facts
+var facts;                // Business Cases
+var issueFacts;           // Issues
+var factsLoaded = false;  // Boolean set after loading, enables filters
+
+// Filter on facts is page-wide
+var filterLocn = 0;       // 0=All, 1=Hestra, 2=StAme
+var siteDim;              // Dimension to filter upon
 
 // Create the spinning wheel while waiting for data load
 // See http://fgnass.github.io/spin.js/
-var spinner = [ null, null ];
-var spinDiv = [ 0, 0 ];
+var spinner = [ null, null, null, null, null ];
+var spinDiv = [ 0, 0, 0, 0, 0 ];
 $(document).ready(function() {
   var opts = {
     lines: 13,        // The number of lines to draw
@@ -64,17 +69,6 @@ function bcSymbol( c ) {
   }
 }
 
-// Map ticket status to test status name
-function testStatus( s ) {
-  switch( s.toLowerCase() ) {
-    case "new":       return( "Not started" );
-    case "open":      return( "In progress" );
-    case "stalled":   return( "In error" );
-    case "resolved":  return( "Completed" );
-    default:          return( "Unknown" );
-  }
-}
-
 // Anchor the ticket subject
 function ticketA( id, subj ) {
   return( "<a href='http://ithelpdesk.ema.esselte.net/rt/Ticket/Display.html?id=" + id + "'>" + subj + "</a>" );
@@ -100,13 +94,12 @@ d3.json("./data/tickets.json", function (data) {
   testsPie.width(200).height(200)
     .radius(100)
     .innerRadius(70)
-    //.ordinalColors(["#8a56e2","#cf56e2","#e256ae","#e25668","#e28956","#e2cf56","#aee256","#68e256","#56e289","#56e2cf","#56aee2","#5668e2"])
     .ordinalColors(["#5668e2","#56aee2","#56e2cf","#56e289","#68e256","#aee256","#e2cf56","#e28956","#e25668","#e256ae","#cf56e2","#8a56e2"])
     .legend(dc.legend().x(50).y(40).itemHeight(12).gap(3))
     .renderLabel(false)
     .dimension(statusDim)
     .group(statusGroup)
-    .title(function(d) { return d.value + toPlural(" business case",d.value) + " " + d.key; });
+    .title(function(d) { return d.value + toPlural(" business case", d.value) + " " + d.key; });
 
   // Table of Business Cases
   var nFmt = d3.format("4d");
@@ -159,6 +152,8 @@ d3.json("./data/issues.json", function (data) {
   var issueStatusGroup = issueStatusDim.group();
   var issueOwnerDim = issueFacts.dimension(function (d) { return d.owner; });
   var issueOwnerGroup = issueOwnerDim.group();
+  // Duplicate used for bubble chart
+  var issueStatusDim2 = issueFacts.dimension(function (d) { return d.status; });
 
   // Issue status row chart
   statusRow.width(200).height(200)
@@ -171,7 +166,7 @@ d3.json("./data/issues.json", function (data) {
     .elasticX(true)
     .xAxis().ticks(4);
 
-  // Issue owners pie chart
+  // Issue owners pie chart -- From now on only active issues
   issueStatusDim.filter(function (d) { return d != "resolved"; });
   ownerPie.width(200).height(200)
     .radius(100)
@@ -182,48 +177,65 @@ d3.json("./data/issues.json", function (data) {
     .title(function (d) { return d.key + ": " + d.value + toPlural(" issue", d.value); });
 
   // Issue grouping by Frequency / Impact (for the bubble chart)
-  var issueFreqImpactGroup = issueStatusDim.group().reduce(
-    function(p, v) {    // Add callback
-      p.count++;
-      if( v.frequency === 'H' ) { p.freqH++; }
-      if( v.frequency === 'M' ) { p.freqM++; }
-      if( v.frequency === 'L' ) { p.freqL++; }
-      if( v.impact === 'H' ) { p.impH++; }
-      if( v.impact === 'M' ) { p.impM++; }
-      if( v.impact === 'L' ) { p.impL++; }
+  //------------------------------------------------------------
+  // Assign a temperature to each combination of frequency and impact
+  // ranging from 40 to 200 "degrees"
+  var temperature = function(f, i) {
+    var temps = [
+      ['H', 'H', 200],['H', 'M', 180],['H', 'L', 160],
+      ['M', 'H', 140],['M', 'M', 120],['M', 'L', 100],
+      ['L', 'H',  80],['L', 'M',  60],['L', 'L',  40]
+    ];
+    for( var n = 0; n < temps.length; n++ ) {
+      if( f === temps[n][0] && i === temps[n][1] ) {
+        return temps[n][2];
+      }
+    }
+    return 40;
+  };
+
+  // Assign an axis position to each inidcator, one of: 25, 50, 75
+  var position = function(v) {
+    return( v === 'H' ? 75 : ( v === 'M' ? 50 : 25 ) );
+  };
+
+  issueStatusDim2.filter(function (d) { return d != "resolved"; });
+  var issueFreqImpactGroup = issueStatusDim2.group().reduce(
+    function(p, v) {  // Add callback
+      ++p.count;
+      p.therm = temperature(v.frequency.toUpperCase(), v.impact.toUpperCase());
+      p.xPos = position(v.frequency.toUpperCase());
+      p.yPos = position(v.impact.toUpperCase());
     },
-    function(p, v) {    // Remove calback
-      p.count--;
-      if( v.frequency === 'H' ) { p.freqH--; }
-      if( v.frequency === 'M' ) { p.freqM--; }
-      if( v.frequency === 'L' ) { p.freqL--; }
-      if( v.impact === 'H' ) { p.impH--; }
-      if( v.impact === 'M' ) { p.impM--; }
-      if( v.impact === 'L' ) { p.impL--; }
+    function(p, v) {  // Remove callback
+      --p.count;
+      p.therm = temperature(v.frequency.toUpperCase(), v.impact.toUpperCase());
+      p.xPos = position(v.frequency.toUpperCase());
+      p.yPos = position(v.impact.toUpperCase());
     },
-    function(p, v) {    // Initialize callback
-      return { count:0, freqH:0, freqM:0, freqL:0, impH:0, impM:0, impL:0 };
+    function() {  // Initialize p
+      return {count:0, therm:0, xPos:0, yPos:0};
     }
   );
 
   // Issue impact bubble chart
-/*
   impactBub.width(200).height(200)
     .margins({top:5, left:20, right:10, bottom:20})
-    .dimension(issueStatusDim)
+    .dimension(issueStatusDim2)
     .group(issueFreqImpactGroup)
-    .colors()
-    .colorDomain()
-    .colorAccessor(function (d) { } )
-    .keyAccessor(function (d) { } )
-    .valueAccessor(function (d) { } )
-    .radiusValueAccessor(function (d) { } )
+    .colors(d3.scale.category20b())
+    .colorDomain([40,200])
+    .colorAccessor(function (d) { return d.value.therm; } )
+    .keyAccessor(function (p) { return p.value.xPos; } )
+    .valueAccessor(function (p) { return p.value.yPos; } )
+    .radiusValueAccessor(function (p) { return p.value.count; } )
     .maxBubbleRelativeSize(0.3)
     .x(d3.scale.linear().domain([0,100]))
     .y(d3.scale.linear().domain([0,100]))
     .r(d3.scale.linear().domain([0,100]))
     .elasticX(true)
     .elasticY(true)
+    .elasticRadius(true)
     .yAxisPadding(100)
     .xAxisPadding(100)
     .renderHorizontalGridLines(true)
@@ -234,8 +246,7 @@ d3.json("./data/issues.json", function (data) {
     .label(function (d) { return d.key; })
     .renderTitle(true)
     .title(function (d) { return d.value; })
-  );
-*/
+  ;
 
   // Table of Issues
   // var nFmt = d3.format("4d");
