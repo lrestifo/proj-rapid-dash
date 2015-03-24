@@ -152,10 +152,9 @@ d3.json("./data/issues.json", function (data) {
   var issueStatusGroup = issueStatusDim.group();
   var issueOwnerDim = issueFacts.dimension(function (d) { return d.owner; });
   var issueOwnerGroup = issueOwnerDim.group();
-  // Duplicate used for bubble chart
-  var issueStatusDim2 = issueFacts.dimension(function (d) { return d.status; });
 
   // Issue status row chart
+  issueStatusDim.filterAll();
   statusRow.width(200).height(200)
     .margins({top:5, left:10, right:10, bottom:20})
     .dimension(issueStatusDim)
@@ -177,76 +176,87 @@ d3.json("./data/issues.json", function (data) {
     .title(function (d) { return d.key + ": " + d.value + toPlural(" issue", d.value); });
 
   // Issue grouping by Frequency / Impact (for the bubble chart)
+  var issueFreqImpDim = issueFacts.dimension(function (d) {
+    var f = d.frequency.charAt(0).toUpperCase();
+    var i = d.impact.charAt(0).toUpperCase();
+    if( f != "H" && f != "M" && f != "L" ) {
+      f = "L";
+    }
+    if( i != "H" && i != "M" && i != "L" ) {
+      i = "L";
+    }
+    return( f.concat(i) );
+  });
+  var issueFreqImpGroup = issueFreqImpDim.group();
+
   //------------------------------------------------------------
   // Assign a temperature to each combination of frequency and impact
   // ranging from 40 to 200 "degrees"
-  var temperature = function(f, i) {
-    var temps = [
-      ['H', 'H', 200],['H', 'M', 180],['H', 'L', 160],
-      ['M', 'H', 140],['M', 'M', 120],['M', 'L', 100],
-      ['L', 'H',  80],['L', 'M',  60],['L', 'L',  40]
-    ];
-    for( var n = 0; n < temps.length; n++ ) {
-      if( f === temps[n][0] && i === temps[n][1] ) {
-        return temps[n][2];
-      }
-    }
-    return 40;
+  var temperature = function(fi) {
+    var temps = {HH:200, HM:180, HL:160, MH:140, MM:120, ML:100, LH:80, LM:60, LL:40};
+    return temps[fi];
   };
 
-  // Assign an axis position to each inidcator, one of: 25, 50, 75
+  // Assign an axis position to each inidcator, one of: 10, 20, 30
   var position = function(v) {
-    return( v === 'H' ? 75 : ( v === 'M' ? 50 : 25 ) );
+    return( v === 'H' ? 30 : ( v === 'M' ? 20 : 10 ) );
   };
-
-  issueStatusDim2.filter(function (d) { return d != "resolved"; });
-  var issueFreqImpactGroup = issueStatusDim2.group().reduce(
-    function(p, v) {  // Add callback
-      ++p.count;
-      p.therm = temperature(v.frequency.toUpperCase(), v.impact.toUpperCase());
-      p.xPos = position(v.frequency.toUpperCase());
-      p.yPos = position(v.impact.toUpperCase());
-    },
-    function(p, v) {  // Remove callback
-      --p.count;
-      p.therm = temperature(v.frequency.toUpperCase(), v.impact.toUpperCase());
-      p.xPos = position(v.frequency.toUpperCase());
-      p.yPos = position(v.impact.toUpperCase());
-    },
-    function() {  // Initialize p
-      return {count:0, therm:0, xPos:0, yPos:0};
-    }
-  );
 
   // Issue impact bubble chart
   impactBub.width(200).height(200)
-    .margins({top:5, left:20, right:10, bottom:20})
-    .dimension(issueStatusDim2)
-    .group(issueFreqImpactGroup)
-    .colors(d3.scale.category20b())
+    .margins({top:5, left:25, right:2, bottom:30})
+    .dimension(issueFreqImpDim)
+    .group(issueFreqImpGroup)
+    .colors(colorbrewer.YlOrRd[9])
     .colorDomain([40,200])
-    .colorAccessor(function (d) { return d.value.therm; } )
-    .keyAccessor(function (p) { return p.value.xPos; } )
-    .valueAccessor(function (p) { return p.value.yPos; } )
-    .radiusValueAccessor(function (p) { return p.value.count; } )
+    .colorAccessor(function (p) { return temperature(p.key); } )
+    .keyAccessor(function (p) { return position(p.key.charAt(0)); } )
+    .valueAccessor(function (p) { return position(p.key.charAt(1)); } )
+    .radiusValueAccessor(function (p) { return p.value; } )
     .maxBubbleRelativeSize(0.3)
-    .x(d3.scale.linear().domain([0,100]))
-    .y(d3.scale.linear().domain([0,100]))
+    .x(d3.scale.linear().domain([10,30]))
+    .y(d3.scale.linear().domain([10,30]))
     .r(d3.scale.linear().domain([0,100]))
     .elasticX(true)
     .elasticY(true)
     .elasticRadius(true)
-    .yAxisPadding(100)
-    .xAxisPadding(100)
+    .yAxisPadding(5)
+    .xAxisPadding(5)
     .renderHorizontalGridLines(true)
     .renderVerticalGridLines(true)
     .xAxisLabel("Frequency")
     .yAxisLabel("Impact")
     .renderLabel(true)
-    .label(function (d) { return d.key; })
+    .label(function (d) { return d.value; })
     .renderTitle(true)
-    .title(function (d) { return d.value; })
-  ;
+    .title(function (d) {
+      return d.value + " " + toPlural("issue", d.value) + " " +
+             d.key.charAt(0) + " freq./" + d.key.charAt(1) + " imp.";
+    });
+    impactBub.yAxis().tickFormat(function (v) {
+      switch( v ) {
+        case 10:
+          return "L";
+        case 20:
+          return "M";
+        case 30:
+          return "H";
+        default:
+          return " ";
+      }
+    });
+    impactBub.xAxis().tickFormat(function (v) {
+      switch( v ) {
+        case 10:
+          return "L";
+        case 20:
+          return "M";
+        case 30:
+          return "H";
+        default:
+          return " ";
+      }
+    });
 
   // Table of Issues
   // var nFmt = d3.format("4d");
