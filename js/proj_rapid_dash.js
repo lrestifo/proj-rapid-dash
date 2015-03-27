@@ -12,7 +12,7 @@ var testsPie = dc.pieChart("#bc-test-chart","bc");
 var statusRow = dc.rowChart("#issue-stat-chart","ii");
 var ownerPie = dc.pieChart("#issue-own-chart","ii");
 var impactBub = dc.bubbleChart("#issue-impact-chart","ii");
-// var issueTable = dc.dataTable("#issue-table");
+var issueTable = dc.dataTable("#issue-table", "ii");
 
 // Hold crossfilter facts
 var facts;                // Business Cases
@@ -25,8 +25,9 @@ var siteDim;              // Dimension to filter upon
 
 // Create the spinning wheel while waiting for data load
 // See http://fgnass.github.io/spin.js/
-var spinner = [ null, null, null, null, null ];
-var spinDiv = [ 0, 0, 0, 0, 0 ];
+var spinner = [ null, null, null, null, null, null ];
+var spinDiv = [ 0, 0, 0, 0, 0, 0 ];
+var spinGrp = [ 0, 0, 1, 1, 1, 1 ];  // Group: 0->BC's, 1->Issues
 $(document).ready(function() {
   var opts = {
     lines: 13,        // The number of lines to draw
@@ -46,11 +47,12 @@ $(document).ready(function() {
     top: "50%",       // Top position relative to parent
     left: "50%"       // Left position relative to parent
   };
-  spinDiv[0] = $("#spinner").get(0);
+  spinDiv[0] = $("#spinner0").get(0);
   spinDiv[1] = $("#bc-test-div").get(0);
   spinDiv[2] = $("#issue-stat-div").get(0);
   spinDiv[3] = $("#issue-own-div").get(0);
   spinDiv[4] = $("#issue-impact-div").get(0);
+  spinDiv[5] = $("#spinner1").get(0);
   for( var i = 0; i < spinDiv.length; i++ ) {
     spinner[i] = new Spinner(opts).spin(spinDiv[i]);
   }
@@ -132,9 +134,9 @@ d3.json("./data/tickets.json", function (data) {
   dc.renderAll("bc");
   factsLoaded = true;
 
-  // End the spinner(s)
+  // End Group 0 spinner(s)
   for( var i = 0; i < spinDiv.length; i++ ) {
-    if( spinner[i] != null ) {
+    if( spinner[i] != null && spinGrp[i] == 0 ) {
       spinner[i].stop(spinDiv[i]);
     }
   }
@@ -259,26 +261,32 @@ d3.json("./data/issues.json", function (data) {
     });
 
   // Table of Issues
-  // var nFmt = d3.format("4d");
-  // issueTable.width(240).height(120)
-    // .dimension(issueDim)
-    // .group(function(d) { return ( filterLocn == 0 ? "All Issues" : ( filterLocn == 1 ? "Issues Hestra" : "Issues St.Amé" ) ); })
-    // .size(200)
-    // .columns([
-      // function(d) { return ticketA(d.id, d.id); },
-      // function(d) { return d.site; },
-      // function(d) { return ticketA(d.id, d.subject); },
-      // function(d) { return d.owner; },
-      // function(d) { return d.frequency; },
-      // function(d) { return d.impact; },
-      // function(d) { return d.status; },
-      // function(d) { return d.bc; }
-    // ])
-    // .sortBy(function(d){ return d.id; })
-    // .order(d3.ascending);
+  issueTable.width(960).height(800)
+      .dimension(issueDim)
+      .group(function(d) { return ( filterLocn == 0 ? "All Issues" : ( filterLocn == 1 ? "Issues Hestra" : "Issues St.Amé" ) ); })
+      .size(200)
+      .columns([
+        function(d) { return ticketA(d.id, d.id); },
+        function(d) { return d.site; },
+        function(d) { return ticketA(d.id, d.subject); },
+        function(d) { return d.owner; },
+        function(d) { return d.frequency; },
+        function(d) { return d.impact; },
+        function(d) { return d.status; },
+        function(d) { return d.bc; }
+      ])
+      .sortBy(function(d){ return d.id; })
+      .order(d3.ascending);
 
-  // Render the charts
-  dc.renderAll("ii");
+    // Render the charts
+    dc.renderAll("ii");
+
+    // End Group 1 spinner(s)
+    for( var i = 0; i < spinDiv.length; i++ ) {
+      if( spinner[i] != null && spinGrp[i] == 1 ) {
+        spinner[i].stop(spinDiv[i]);
+      }
+    }
 
 });
 
