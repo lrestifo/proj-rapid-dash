@@ -22,6 +22,7 @@ var factsLoaded = false;  // Boolean set after loading, enables filters
 // Filter on facts is page-wide
 var filterLocn = 0;       // 0=All, 1=Hestra, 2=StAme
 var siteDim;              // Dimension to filter upon
+var issueSiteDim;         // For issues, too
 
 // Create the spinning wheel while waiting for data load
 // See http://fgnass.github.io/spin.js/
@@ -149,6 +150,7 @@ d3.json("./data/issues.json", function (data) {
 
   // Run the data through crossfilter and load facts and dimensions
   issueFacts = crossfilter(data);
+  issueSiteDim = issueFacts.dimension(function (d) { return d.site; });
   var issueDim = issueFacts.dimension(function (d) { return d.id; });
   var issueStatusDim = issueFacts.dimension(function (d) { return d.status; });
   var issueStatusGroup = issueStatusDim.group();
@@ -166,6 +168,24 @@ d3.json("./data/issues.json", function (data) {
     .title(function (d) { return d.value + " " + d.key + toPlural(" issue",d.key); })
     .elasticX(true)
     .xAxis().ticks(4);
+
+  // Table of Issues -- Shows them all
+  issueTable.width(960).height(800)
+    .dimension(issueDim)
+    .group(function(d) { return ( filterLocn == 0 ? "All Issues" : ( filterLocn == 1 ? "Issues Hestra" : "Issues St.Amé" ) ); })
+    .size(200)
+    .columns([
+      function(d) { return ticketA(d.id, d.id); },
+      function(d) { return d.site; },
+      function(d) { return ticketA(d.id, d.subject); },
+      function(d) { return d.owner; },
+      function(d) { return d.frequency; },
+      function(d) { return d.impact; },
+      function(d) { return d.status; },
+      function(d) { return d.bc; }
+      ])
+      .sortBy(function(d){ return d.id; })
+      .order(d3.ascending);
 
   // Issue owners pie chart -- From now on only active issues
   issueStatusDim.filter(function (d) { return d != "resolved"; });
@@ -191,7 +211,6 @@ d3.json("./data/issues.json", function (data) {
   });
   var issueFreqImpGroup = issueFreqImpDim.group();
 
-  //------------------------------------------------------------
   // Assign a temperature to each combination of frequency and impact
   // ranging from 40 to 200 "degrees"
   var temperature = function(fi) {
@@ -259,24 +278,6 @@ d3.json("./data/issues.json", function (data) {
           return " ";
       }
     });
-
-  // Table of Issues
-  issueTable.width(960).height(800)
-      .dimension(issueDim)
-      .group(function(d) { return ( filterLocn == 0 ? "All Issues" : ( filterLocn == 1 ? "Issues Hestra" : "Issues St.Amé" ) ); })
-      .size(200)
-      .columns([
-        function(d) { return ticketA(d.id, d.id); },
-        function(d) { return d.site; },
-        function(d) { return ticketA(d.id, d.subject); },
-        function(d) { return d.owner; },
-        function(d) { return d.frequency; },
-        function(d) { return d.impact; },
-        function(d) { return d.status; },
-        function(d) { return d.bc; }
-      ])
-      .sortBy(function(d){ return d.id; })
-      .order(d3.ascending);
 
     // Render the charts
     dc.renderAll("ii");

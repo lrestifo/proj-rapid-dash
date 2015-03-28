@@ -37,6 +37,14 @@ sub fixQuotes {
   return $s;
 }
 
+# Capture site info embedded in the subject string (S/H-, S-, H-)
+#-----------------------------------------------------------------
+sub defSite {
+  my $s = $_[0];
+  $s =~ m/[A-Za-z ]+(S\/H-|S-|H-)[A-Z]/;
+  return substr($1,0,length($1)-1);
+}
+
 # Read configuration data
 #-------------------------
 # my $conf = LoadFile("config.yaml");
@@ -58,6 +66,7 @@ try {
 #--------------------------------------
 my @bcFreq; # Frequency
 my @bcImp;  # Impact
+my @bcSite; # Site
 print "Content-type: application/json;\n\n[";
 try {
   # Query business cases
@@ -71,6 +80,7 @@ try {
     my $t = $rt->show(type => "ticket", id => $id);
     $bcFreq[$id] = substr( $t->{"CF.{QS Color}"}, 0, 1 ); # H/M/L
     $bcImp[$id]  = substr( $t->{"CF.{QS Color}"}, 1, 1 ); # H/M/L
+    $bcSite[$id] = defSite($t->{Subject});
     # Query issues for the current business case
     my $issueQry = "MemberOf = " . $id;
     my @iids = $rt->search(
@@ -88,6 +98,7 @@ try {
       print '"status":"', $tk->{Status}, '",';
       print '"owner":"', $tk->{Owner}, '",';
       print '"bc":', $id, ',';
+      print '"site":"', $bcSite[$id], '",';
       print '"frequency":"', $bcFreq[$id], '",';
       print '"impact":"', $bcImp[$id], '"}';
       $issues++;
