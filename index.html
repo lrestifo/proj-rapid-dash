@@ -39,7 +39,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="#">SAP Rapid Project</a>
+          <a class="navbar-brand" href="#"><span><img src="img/logo_rapid.png"> SAP Rapid Project</span></a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <form class="navbar-form navbar-right" id="tk-search">
@@ -57,7 +57,10 @@
     <div class="container-fluid">
       <div class="row">
         <div class="col-sm-12 col-md-12 main">
-          <h1 class="page-header">Integration Testing Dashboard</h1>
+          <h1 class="page-header">
+            Integration Testing Dashboard
+            <span class="pull-right h5 text-muted"><small>Updated <span id="lastUpdate" data-livestamp="0"></span></small></span>
+          </h1>
 
           <div class="row placeholders">
             <div class="col-xs-6 col-sm-3 placeholder" id="bc-test-div">
@@ -82,59 +85,63 @@
             </div>
           </div>
 
-          <h2 class="sub-header">
-            Business Cases
-            <span class="pull-right">
-              <button type="button" class="btn btn-link" title="Toggle visibility" data-toggle="collapse" data-target="#bc-table-div">
-                <span class="glyphicon glyphicon-chevron-down"></span>
-              </button>
-            </span>
-          </h2>
-          <div class="spinner" id="spinner0"></div>
-          <div class="table-responsive collapse" id="bc-table-div">
-            <table class="table table-striped table-hover table-condensed" id="bc-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Site</th>
-                  <th>Test Case</th>
-                  <th>Status</th>
-                  <th>Open Issues</th>
-                  <th>XLS Prep</th>
-                  <th>Data Verify</th>
-                  <th>Order Entry</th>
-                  <th>Procurem</th>
-                  <th>Del Create</th>
-                  <th>Production</th>
-                  <th>QM+WH Inbound</th>
-                  <th>ICT Delivery</th>
-                  <th>WH Outbound</th>
-                  <th>Invoice (P/S)</th>
-                  <th>FI Post/Ctl</th>
-                </tr>
-              </thead>
-            </table>
-          </div>
+          <div role="tabpanel">
 
-          <h2 class="sub-header">Issues</h2>
-          <div class="spinner" id="spinner1"></div>
-          <div class="table-responsive">
-            <table class="table table-striped table-hover table-condensed" id="issue-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Site</th>
-                  <th>Subject</th>
-                  <th>Owner</th>
-                  <th>Frequency</th>
-                  <th>Impact</th>
-                  <th>Status</th>
-                  <th>Business Case</th>
-                </tr>
-              </thead>
-            </table>
-          </div>
+            <ul class="nav nav-tabs" role="tablist">
+              <li role="presentation" class="active"><a href="#bc-table-tab" role="tab" data-toggle="tab"><h4>Business Cases</h4></a></li>
+              <li role="presentation"><a href="#issue-table-tab" role="tab" data-toggle="tab"><h4>Issues</h4></a></li>
+            </ul>
 
+            <div class="tab-content">
+              <div role="tabpanel" class="tab-pane active" id="bc-table-tab">
+                <div class="spinner" id="spinner0"></div>
+                <div class="table-responsive" id="bc-table-div">
+                  <table class="table table-striped table-hover table-condensed" id="bc-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Site</th>
+                        <th>Test Case</th>
+                        <th>Status</th>
+                        <th>Open Issues</th>
+                        <th>XLS Prep</th>
+                        <th>Data Verify</th>
+                        <th>Order Entry</th>
+                        <th>Procurem</th>
+                        <th>Del Create</th>
+                        <th>Production</th>
+                        <th>QM+WH Inbound</th>
+                        <th>ICT Delivery</th>
+                        <th>WH Outbound</th>
+                        <th>Invoice (P/S)</th>
+                        <th>FI Post/Ctl</th>
+                      </tr>
+                    </thead>
+                  </table>
+                </div>
+              </div>
+              <div role="tabpanel" class="tab-pane" id="issue-table-tab">
+                <div class="spinner" id="spinner1"></div>
+                <div class="table-responsive">
+                  <table class="table table-striped table-hover table-condensed" id="issue-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Site</th>
+                        <th>Subject</th>
+                        <th>Owner</th>
+                        <th>Frequency</th>
+                        <th>Impact</th>
+                        <th>Status</th>
+                        <th>Business Case</th>
+                      </tr>
+                    </thead>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
@@ -153,6 +160,8 @@
     <script src="js/ie10-viewport-bug-workaround.js"></script>
 
     <!-- Page-specific code loads here -->
+    <script src="js/moment.min.js"></script>
+    <script src="js/livestamp.min.js"></script>
     <script src="js/spin.min.js"></script>
     <script src="js/proj_rapid_dash.js"></script>
   </body>

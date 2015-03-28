@@ -17,7 +17,8 @@ var issueTable = dc.dataTable("#issue-table", "ii");
 // Hold crossfilter facts
 var facts;                // Business Cases
 var issueFacts;           // Issues
-var factsLoaded = false;  // Boolean set after loading, enables filters
+var factsLoaded = false;  // Boolean set after loading, enables filters (BC's)
+var issueLoaded = false;  // Boolean set after loading, enables filters (Issues)
 
 // Filter on facts is page-wide
 var filterLocn = 0;       // 0=All, 1=Hestra, 2=StAme
@@ -28,7 +29,7 @@ var issueSiteDim;         // For issues, too
 // See http://fgnass.github.io/spin.js/
 var spinner = [ null, null, null, null, null, null ];
 var spinDiv = [ 0, 0, 0, 0, 0, 0 ];
-var spinGrp = [ 0, 0, 1, 1, 1, 1 ];  // Group: 0->BC's, 1->Issues
+var spinGrp = [ "bc", "bc", "ii", "ii", "ii", "ii" ];  // Follow chart groups
 $(document).ready(function() {
   var opts = {
     lines: 13,        // The number of lines to draw
@@ -82,6 +83,31 @@ function toPlural( s, n ) {
   return( n == 1 ? s : s+"s" );
 }
 
+// Called at the end of data loading
+function dataLoaded( g ) {
+  if( g == "bc" ) {
+    factsLoaded = true;
+    // End Group 0 spinner(s)
+    for( var i = 0; i < spinDiv.length; i++ ) {
+      if( spinner[i] != null && spinGrp[i] == "bc" ) {
+        spinner[i].stop(spinDiv[i]);
+      }
+    }
+  }
+  if( g == "ii" ) {
+    issueLoaded = true;
+    // End Group 1 spinner(s)
+    for( var i = 0; i < spinDiv.length; i++ ) {
+      if( spinner[i] != null && spinGrp[i] == "ii" ) {
+        spinner[i].stop(spinDiv[i]);
+      }
+    }
+  }
+  if( factsLoaded && issueLoaded ) {
+    $("#lastUpdate").livestamp(new Date());
+  }
+}
+
 // Load data from the server
 // d3.json("../cgi-bin/rapid/tickets.pl", function (data) {
 d3.json("./data/tickets.json", function (data) {
@@ -133,14 +159,7 @@ d3.json("./data/tickets.json", function (data) {
 
   // Render the charts
   dc.renderAll("bc");
-  factsLoaded = true;
-
-  // End Group 0 spinner(s)
-  for( var i = 0; i < spinDiv.length; i++ ) {
-    if( spinner[i] != null && spinGrp[i] == 0 ) {
-      spinner[i].stop(spinDiv[i]);
-    }
-  }
+  dataLoaded("bc");
 
 });
 
@@ -281,13 +300,7 @@ d3.json("./data/issues.json", function (data) {
 
     // Render the charts
     dc.renderAll("ii");
-
-    // End Group 1 spinner(s)
-    for( var i = 0; i < spinDiv.length; i++ ) {
-      if( spinner[i] != null && spinGrp[i] == 1 ) {
-        spinner[i].stop(spinDiv[i]);
-      }
-    }
+    dataLoaded("ii");
 
 });
 
@@ -305,7 +318,7 @@ $("#filterSE").click(function(e) { setLocationFilter(1); });
 $("#filterFR").click(function(e) { setLocationFilter(2); });
 $("#filterXX").click(function(e) { setLocationFilter(0); });
 function setLocationFilter( l ) {
-  if( !factsLoaded ) { return; }
+  if( !factsLoaded || !issueLoaded ) { return; }
   dc.filterAll("bc");
   switch( l ) {
     case 1:
