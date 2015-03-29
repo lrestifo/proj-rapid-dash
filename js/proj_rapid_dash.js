@@ -17,6 +17,8 @@ var issueTable = dc.dataTable("#issue-table", "ii");
 // Hold crossfilter facts
 var facts;                // Business Cases
 var issueFacts;           // Issues
+var factsAll;             // Counters
+var issueFactsAll;        // Counters
 var factsLoaded = false;  // Boolean set after loading, enables filters (BC's)
 var issueLoaded = false;  // Boolean set after loading, enables filters (Issues)
 
@@ -114,6 +116,7 @@ d3.json("./data/tickets.json", function (data) {
 
   // Run the data through crossfilter and load facts and dimensions
   facts = crossfilter(data);
+  factsAll = facts.groupAll();
   siteDim = facts.dimension(function (d) { return d.site; });
   var bcDim = facts.dimension(function (d) { return d.id; });
   var statusDim = facts.dimension(function (d) { return d.completion; });
@@ -157,6 +160,10 @@ d3.json("./data/tickets.json", function (data) {
     .sortBy(function(d){ return d.id; })
     .order(d3.ascending);
 
+  dc.dataCount(".bc-data-count", "bc")
+    .dimension(facts)
+    .group(factsAll);
+
   // Render the charts
   dc.renderAll("bc");
   dataLoaded("bc");
@@ -169,6 +176,7 @@ d3.json("./data/issues.json", function (data) {
 
   // Run the data through crossfilter and load facts and dimensions
   issueFacts = crossfilter(data);
+  issueFactsAll = issueFacts.groupAll();
   issueSiteDim = issueFacts.dimension(function (d) { return d.site; });
   var issueDim = issueFacts.dimension(function (d) { return d.id; });
   var issueStatusDim = issueFacts.dimension(function (d) { return d.status; });
@@ -184,7 +192,7 @@ d3.json("./data/issues.json", function (data) {
     .group(issueStatusGroup)
     .colors(d3.scale.category10())
     .label(function (d) { return d.key; })
-    .title(function (d) { return d.value + " " + d.key + toPlural(" issue",d.key); })
+    .title(function (d) { return d.value + " " + d.key + toPlural(" issue", d.value); })
     .elasticX(true)
     .xAxis().ticks(4);
 
@@ -298,6 +306,11 @@ d3.json("./data/issues.json", function (data) {
       }
     });
 
+    // Update counters
+    dc.dataCount(".issue-data-count", "ii")
+      .dimension(issueFacts)
+      .group(issueFactsAll);
+
     // Render the charts
     dc.renderAll("ii");
     dataLoaded("ii");
@@ -320,22 +333,35 @@ $("#filterXX").click(function(e) { setLocationFilter(0); });
 function setLocationFilter( l ) {
   if( !factsLoaded || !issueLoaded ) { return; }
   dc.filterAll("bc");
+  dc.filterAll("ii");
   switch( l ) {
     case 1:
       siteDim.filter("H");
+      issueSiteDim.filter("H");
       filterLocn = 1;
       $(".currentLocn").text("Hestra");
       break;
     case 2:
       siteDim.filter("S");
+      issueSiteDim.filter("S");
       filterLocn = 2;
       $(".currentLocn").text("St.Amé");
       break;
     default:
       siteDim.filterAll("bc");
+      issueSiteDim.filterAll("ii");
       filterLocn = 0;
       $(".currentLocn").text("Hestra + St.Amé");
       break;
   }
   dc.redrawAll("bc");
+  dc.redrawAll("ii");
 }
+
+// Reset all filters button
+$("#resetAll").click(function(e) {
+  dc.filterAll("bc");
+  dc.filterAll("ii");
+  dc.renderAll("bc");
+  dc.renderAll("ii");
+});
