@@ -134,8 +134,12 @@ body {
 /*
  * Table
  */
-.dc-table-group {
+#bc-table .dc-table-group {
   background-color: #337ab7 !important;
   color: #fff;
 }
 
+#issue-table .dc-table-group {
+  background-color: #5bc0de !important;
+  color: #fff;
+}

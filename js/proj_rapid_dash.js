@@ -106,6 +106,7 @@ function dataLoaded( g ) {
     }
   }
   if( factsLoaded && issueLoaded ) {
+    $(".toggle-hidden").toggleClass("hidden");
     $("#lastUpdate").livestamp(new Date());
   }
 }
