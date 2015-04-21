@@ -158,7 +158,7 @@ d3.json("./data/tickets.json", function (data) {
       function(d) { return bcSymbol( d.progress.charAt(9) ); },
       function(d) { return bcSymbol( d.progress.charAt(10) ); }
     ])
-    .sortBy(function(d){ return d.id; })
+    .sortBy(function(d){ return ( d.subject.substring(0,5) == "Integ" ? d.subject.substr(19) : d.subject ); })
     .order(d3.ascending);
 
   dc.dataCount(".bc-data-count", "bc")
